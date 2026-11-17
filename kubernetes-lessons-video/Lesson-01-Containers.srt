@@ -1,0 +1,239 @@
+1
+00:00:00,600 --> 00:00:03,314
+Welcome to lesson one of the Kubernetes course.
+
+2
+00:00:03,414 --> 00:00:10,768
+In this lesson, you'll learn what containers are, why Kubernetes depends on them, and how to run and build your first container.
+
+3
+00:00:12,118 --> 00:00:14,064
+Why start with containers?
+
+4
+00:00:14,164 --> 00:00:18,030
+Because Kubernetes runs containers. That's its whole job.
+
+5
+00:00:18,130 --> 00:00:25,804
+If you don't understand what a container is, every later lesson will feel like magic. So let's build a solid foundation first.
+
+6
+00:00:27,154 --> 00:00:29,564
+Here's the problem containers solve.
+
+7
+00:00:29,664 --> 00:00:32,522
+A developer says: it works on my machine.
+
+8
+00:00:32,622 --> 00:00:39,768
+But the server has a different operating system, different library versions, or different settings, so the same code breaks there.
+
+9
+00:00:41,118 --> 00:00:42,952
+The solution is a container.
+
+10
+00:00:43,052 --> 00:00:50,406
+A container packages your app together with everything it needs: the runtime, the libraries, and the minimal operating system files.
+
+11
+00:00:50,506 --> 00:00:57,060
+That same package runs the same way on a laptop, a test server, or in production, isolated from other apps.
+
+12
+00:00:58,410 --> 00:01:00,484
+There are five terms you must know.
+
+13
+00:01:00,584 --> 00:01:05,602
+An image is a read-only template. Think of it as a recipe, or a class in programming.
+
+14
+00:01:05,702 --> 00:01:11,792
+A container is a running instance of an image, like a cooked meal, or an object created from a class.
+
+15
+00:01:11,892 --> 00:01:15,358
+A Dockerfile is the set of instructions used to build an image.
+
+16
+00:01:15,458 --> 00:01:19,116
+A registry is where images are stored, such as Docker Hub.
+
+17
+00:01:19,216 --> 00:01:23,914
+And a tag is a version label, like nginx:1.27.
+
+18
+00:01:25,264 --> 00:01:28,042
+How is a container different from a virtual machine?
+
+19
+00:01:28,142 --> 00:01:35,752
+Each virtual machine includes a whole operating system of its own. That makes it gigabytes in size, and it takes minutes to start.
+
+20
+00:01:35,852 --> 00:01:40,646
+Containers share the host's kernel, so there's no separate operating system to boot.
+
+21
+00:01:40,746 --> 00:01:46,180
+They're megabytes in size and start in seconds. That's why Kubernetes can run thousands of them.
+
+22
+00:01:47,530 --> 00:01:50,996
+Now let's practice. You don't need to install anything.
+
+23
+00:01:51,096 --> 00:01:57,586
+Open the Killercoda Ubuntu playground in your browser. It gives you a free Linux terminal with Docker already installed.
+
+24
+00:01:57,686 --> 00:01:59,376
+Follow along with each step.
+
+25
+00:02:00,726 --> 00:02:03,632
+Step one: run your first container.
+
+26
+00:02:03,732 --> 00:02:12,366
+Type: docker run -d --name web -p 8080:80 nginx:1.27
+
+27
+00:02:12,466 --> 00:02:14,732
+-d runs it in the background.
+
+28
+00:02:14,832 --> 00:02:17,178
+--name gives it the name web.
+
+29
+00:02:17,278 --> 00:02:22,280
+-p maps port 8080 on your machine to port 80 inside the container.
+
+30
+00:02:22,380 --> 00:02:26,758
+And nginx:1.27 is the image, with its version tag.
+
+31
+00:02:28,108 --> 00:02:30,406
+Step two: check that it's running.
+
+32
+00:02:30,506 --> 00:02:40,132
+docker ps lists running containers. Then curl localhost:8080. You should see the page that says "Welcome to nginx!"
+
+33
+00:02:40,232 --> 00:02:42,306
+Step three: look inside.
+
+34
+00:02:42,406 --> 00:02:45,264
+docker logs web shows the container's logs.
+
+35
+00:02:45,364 --> 00:02:54,702
+docker exec -it web sh opens a shell inside the running container. List the web files, then type exit to leave.
+
+36
+00:02:56,052 --> 00:02:58,334
+Step four: build your own image.
+
+37
+00:02:58,434 --> 00:03:03,548
+Create a folder called myapp, and a small index.html file with a heading.
+
+38
+00:03:03,648 --> 00:03:13,402
+Then write a Dockerfile with two lines. FROM nginx:1.27, which is the base image. And COPY, which puts your index file into the folder nginx serves.
+
+39
+00:03:13,502 --> 00:03:18,664
+Build it with docker build -t myapp:1.0 .
+
+40
+00:03:18,764 --> 00:03:24,710
+Run it on port 8081, and curl it. You'll see your own page, served from your own image.
+
+41
+00:03:26,060 --> 00:03:27,862
+Step five: clean up.
+
+42
+00:03:27,962 --> 00:03:33,588
+docker rm -f web mine stops and removes both containers.
+
+43
+00:03:33,688 --> 00:03:40,418
+Containers are disposable. You can remove them and start fresh at any time, because the images stay on your machine.
+
+44
+00:03:41,768 --> 00:03:45,282
+Here are the Dockerfile instructions you'll see most often.
+
+45
+00:03:45,382 --> 00:03:51,824
+FROM picks the base image. WORKDIR sets the working directory. COPY copies files from your machine into the image.
+
+46
+00:03:51,924 --> 00:03:57,438
+RUN executes a command while the image is being built, for example installing packages.
+
+47
+00:03:57,538 --> 00:03:59,996
+ENV sets an environment variable.
+
+48
+00:04:00,096 --> 00:04:06,410
+EXPOSE only documents which port the app uses. It doesn't publish the port. That's what -p does.
+
+49
+00:04:06,510 --> 00:04:10,648
+USER makes the app run as a normal user instead of root, which is safer.
+
+50
+00:04:10,748 --> 00:04:14,310
+And CMD is the command that runs when a container starts.
+
+51
+00:04:15,660 --> 00:04:19,446
+One distinction to remember: build time versus run time.
+
+52
+00:04:19,546 --> 00:04:25,396
+At build time, FROM, COPY and RUN create the image. That happens once per version.
+
+53
+00:04:25,496 --> 00:04:30,914
+At run time, CMD starts the container. That happens every time a container starts.
+
+54
+00:04:32,264 --> 00:04:33,490
+Let's recap.
+
+55
+00:04:33,590 --> 00:04:38,336
+A container packages an app with everything it needs, so it runs the same everywhere.
+
+56
+00:04:38,436 --> 00:04:42,078
+An image is the template, and a container is a running instance of it.
+
+57
+00:04:42,178 --> 00:04:48,012
+Containers share the host's kernel, which makes them small and fast compared with virtual machines.
+
+58
+00:04:48,112 --> 00:04:52,826
+You've used docker run, ps, logs, exec, build and rm.
+
+59
+00:04:52,926 --> 00:04:57,368
+And remember to pin image versions with tags, and avoid running as root.
+
+60
+00:04:57,468 --> 00:05:03,734
+In the next lesson, we'll cover the Linux and networking basics you need for Kubernetes. See you there.
