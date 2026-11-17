@@ -1,0 +1,155 @@
+1
+00:00:00,600 --> 00:00:03,634
+Welcome to lesson twenty: observability.
+
+2
+00:00:03,734 --> 00:00:15,696
+You'll learn to know what's happening inside your cluster and apps before users tell you: collecting metrics, logs and traces, building useful dashboards, and writing alerts that wake people only for real problems.
+
+3
+00:00:17,046 --> 00:00:23,984
+Monitoring watches known things, like CPU. Observability lets you answer new questions you didn't plan for.
+
+4
+00:00:24,084 --> 00:00:33,534
+Metrics tell you how much and how fast. Logs tell you exactly what happened. Traces show where the time went across services. Kubernetes events show what the cluster did.
+
+5
+00:00:33,634 --> 00:00:40,908
+The best setups connect them, so you can go from an alert to a dashboard, to a slow trace, to the logs of that exact request.
+
+6
+00:00:42,258 --> 00:00:47,980
+What should you measure? The four golden signals: latency, traffic, errors and saturation.
+
+7
+00:00:48,080 --> 00:00:57,706
+For services, use RED: rate, errors and duration. For resources like nodes and disks, use USE: utilization, saturation and errors.
+
+8
+00:00:57,806 --> 00:01:07,064
+Then set objectives. An S L I is a measurement, an S L O is the target, and the error budget is how much failure is left. Good alerts are based on these.
+
+9
+00:01:08,414 --> 00:01:10,568
+Metrics come from several places.
+
+10
+00:01:10,668 --> 00:01:15,894
+metrics-server only serves autoscaling. It has no history, so it isn't for monitoring.
+
+11
+00:01:15,994 --> 00:01:26,404
+cAdvisor in the kubelet measures containers. kube-state-metrics reports the state of objects. node-exporter measures nodes. And your apps expose their own business and request metrics.
+
+12
+00:01:27,754 --> 00:01:39,476
+Prometheus is the standard metrics system for Kubernetes. It pulls metrics from each target's metrics page, stores them as time series, evaluates rules, and sends alerts to Alertmanager.
+
+13
+00:01:39,576 --> 00:01:42,834
+Each time series is a metric name plus labels.
+
+14
+00:01:42,934 --> 00:01:50,848
+Counters only go up, so always use rate. Gauges go up and down. And histograms let you calculate percentiles across Pods.
+
+15
+00:01:52,198 --> 00:02:00,416
+Here are the essential queries: requests per second, the error percentage, and the ninety-fifth percentile latency from a histogram.
+
+16
+00:02:00,516 --> 00:02:08,766
+Rules of thumb: use a range at least four times the scrape interval, always aggregate after rate, and keep the le label for percentiles.
+
+17
+00:02:10,116 --> 00:02:13,998
+Every unique combination of label values is a separate time series.
+
+18
+00:02:14,098 --> 00:02:24,460
+Labels with unbounded values, like user IDs, email addresses, or full URLs with IDs, create millions of series and crash Prometheus.
+
+19
+00:02:24,560 --> 00:02:29,786
+Use route templates instead, and put high-cardinality details in logs and traces.
+
+20
+00:02:31,136 --> 00:02:40,986
+The usual way to install everything is the kube-prometheus-stack Helm chart. It includes an operator, Prometheus, Alertmanager, Grafana, and ready-made alerts.
+
+21
+00:02:41,086 --> 00:02:50,280
+You tell Prometheus what to scrape with a ServiceMonitor. The two most common mistakes are a missing release label, and a port given as a number instead of the Service's port name.
+
+22
+00:02:50,380 --> 00:02:56,102
+For long retention and many clusters, add Thanos or Mimir, or use a managed service.
+
+23
+00:02:57,452 --> 00:03:02,934
+Here's an alert that fires when the checkout error rate stays above two percent for five minutes.
+
+24
+00:03:03,034 --> 00:03:12,676
+Alert on symptoms users feel, like errors and latency, not on every cause like high CPU. Every paging alert should be actionable and link to a runbook.
+
+25
+00:03:12,776 --> 00:03:20,482
+Alertmanager routes, groups and silences alerts. And a watchdog alert that always fires proves your alerting pipeline itself is working.
+
+26
+00:03:21,832 --> 00:03:29,874
+Apps should log to standard output. The container runtime writes those logs to files on the node, and kubectl logs reads them.
+
+27
+00:03:29,974 --> 00:03:39,152
+So when a Pod or node goes away, its logs are lost. You need central collection: an agent on every node ships logs to a backend like Loki or OpenSearch.
+
+28
+00:03:39,252 --> 00:03:48,190
+Use structured JSON logs with a trace ID, never log secrets, and control the volume. Grafana's older Promtail agent has reached end of life.
+
+29
+00:03:49,540 --> 00:03:57,662
+A trace follows one request across services, as a set of timed spans. Here it shows the database query in the payment service is the problem.
+
+30
+00:03:57,762 --> 00:04:02,220
+Each service must forward the trace context header, or the trace breaks in two.
+
+31
+00:04:02,320 --> 00:04:11,946
+OpenTelemetry is the vendor-neutral standard for producing and moving traces, metrics and logs. Its Collector receives, processes and exports them to any backend.
+
+32
+00:04:13,296 --> 00:04:16,746
+In the lab, you'll install the monitoring stack and query it.
+
+33
+00:04:16,846 --> 00:04:25,912
+You'll likely find some control-plane targets down, because kubeadm binds them to localhost. Many teams never notice they have no control-plane monitoring.
+
+34
+00:04:26,012 --> 00:04:33,750
+You'll scrape an app, calculate its RED metrics, watch an alert fire and resolve, and see logs disappear with a deleted Pod.
+
+35
+00:04:35,100 --> 00:04:36,278
+Let's recap.
+
+36
+00:04:36,378 --> 00:04:40,740
+Collect metrics, logs, traces and events, and connect them.
+
+37
+00:04:40,840 --> 00:04:47,122
+Measure golden signals, use rate on counters and histograms for percentiles, and keep labels bounded.
+
+38
+00:04:47,222 --> 00:04:53,376
+Alert on symptoms with runbooks, collect logs centrally, and use OpenTelemetry for traces.
+
+39
+00:04:53,476 --> 00:04:57,934
+Next, you'll harden the cluster and secure your software supply chain.

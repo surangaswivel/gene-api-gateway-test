@@ -1,0 +1,143 @@
+1
+00:00:00,600 --> 00:00:04,642
+Welcome to lesson twenty-one: security hardening and supply chain.
+
+2
+00:00:04,742 --> 00:00:16,496
+You'll defend a cluster in layers: harden the control plane, nodes and workloads, make sure only trusted images run, and detect and respond to attacks. This covers the topics of the C K S exam.
+
+3
+00:00:17,846 --> 00:00:22,800
+Cloud-native security has four layers: cloud, cluster, container and code.
+
+4
+00:00:22,900 --> 00:00:30,174
+Each layer can only be as secure as the layers around it. A perfect Pod spec doesn't help if the cloud account is compromised.
+
+5
+00:00:31,524 --> 00:00:33,470
+Here's a typical attack path.
+
+6
+00:00:33,570 --> 00:00:41,964
+An attacker gets in through a vulnerable app or a leaked credential, then reads the Pod's token and asks the cloud metadata service for the node's credentials.
+
+7
+00:00:42,064 --> 00:00:47,994
+With the right permissions, they create a privileged Pod and take over the node, then spread through the flat network.
+
+8
+00:00:48,094 --> 00:00:53,816
+Defense in depth means breaking this chain at every step, assuming any single control can fail.
+
+9
+00:00:55,166 --> 00:00:57,208
+Harden the control plane first.
+
+10
+00:00:57,308 --> 00:01:06,646
+Keep the API server off the internet, use Node and RBAC authorization, and turn off anonymous access. Enable audit logging and encryption at rest.
+
+11
+00:01:06,746 --> 00:01:12,964
+Secure the kubelet too. Its API on port ten two fifty can run commands in any Pod on that node.
+
+12
+00:01:13,064 --> 00:01:18,866
+The CIS Kubernetes Benchmark lists secure settings, and kube-bench checks them automatically.
+
+13
+00:01:20,216 --> 00:01:27,410
+An audit policy decides what's recorded: nothing, metadata only, the request, or the request and response.
+
+14
+00:01:27,510 --> 00:01:35,296
+The first matching rule wins, so put a metadata rule for Secrets first. Otherwise every password would be written into the audit log.
+
+15
+00:01:36,646 --> 00:01:41,312
+Use a minimal operating system for nodes, and replace nodes rather than patching them.
+
+16
+00:01:41,412 --> 00:01:46,270
+Protect the cloud metadata service, so containers can't steal the node's credentials.
+
+17
+00:01:46,370 --> 00:02:01,116
+And use the kernel's security features: seccomp filters system calls, AppArmor restricts what programs can access, and dropping capabilities removes root's powers. The app armor profile field is now stable, replacing the old annotation.
+
+18
+00:02:02,466 --> 00:02:12,524
+For workloads, apply everything from earlier lessons: hardened security contexts, the restricted standard, network policies, and least-privilege identities.
+
+19
+00:02:12,624 --> 00:02:19,770
+For untrusted code, sandboxed runtimes like gVisor or Kata Containers add a stronger boundary than a shared kernel.
+
+20
+00:02:19,870 --> 00:02:27,944
+And a service mesh adds mutual TLS, encrypting traffic between services. Network policies alone don't encrypt anything.
+
+21
+00:02:29,294 --> 00:02:36,664
+Supply chain security answers one question: is the image running in production exactly what your team built from reviewed code?
+
+22
+00:02:36,764 --> 00:02:45,158
+Build minimal images with multi-stage builds. Scan them in CI, and rescan running images, because new vulnerabilities appear every day.
+
+23
+00:02:45,258 --> 00:02:52,820
+Generate a software bill of materials, sign images and attach provenance, and verify the signatures when Pods are admitted.
+
+24
+00:02:54,170 --> 00:02:59,812
+cosign signs images keylessly, using the CI system's identity instead of a stored key.
+
+25
+00:02:59,912 --> 00:03:05,074
+Always sign and deploy by digest, because a tag can be moved to a different image.
+
+26
+00:03:05,174 --> 00:03:12,528
+When verifying, check who signed it and which issuer vouched for them. And signing is worthless unless your cluster checks it at admission.
+
+27
+00:03:13,878 --> 00:03:22,560
+Prevention eventually fails, so you need detection. Falco watches system calls and alerts on suspicious behavior, like a shell started inside a container.
+
+28
+00:03:22,660 --> 00:03:32,606
+When a Pod looks compromised, don't delete it, because that destroys the evidence. Isolate it with a quarantine network policy, cordon the node, and capture evidence.
+
+29
+00:03:32,706 --> 00:03:38,668
+Then rotate every credential it could reach, find the entry point, and rebuild from known-good images.
+
+30
+00:03:40,018 --> 00:03:47,244
+In the lab, you'll benchmark the cluster, enable audit logging, and confirm that Secret values never appear in the log.
+
+31
+00:03:47,344 --> 00:04:00,906
+You'll compare confined and unconfined containers, scan images and manifests with Trivy, verify Kubernetes' own signed images with cosign, enforce image rules at admission, and quarantine a compromised Pod.
+
+32
+00:04:02,256 --> 00:04:03,402
+Let's recap.
+
+33
+00:04:03,502 --> 00:04:10,792
+Secure every layer: a private API server, careful audit logging, a hardened kubelet, and protected nodes.
+
+34
+00:04:10,892 --> 00:04:16,198
+Run minimal, scanned and signed images by digest, and verify them at admission.
+
+35
+00:04:16,298 --> 00:04:23,316
+Detect attacks at runtime, and respond by isolating, preserving evidence, rotating credentials and rebuilding.
+
+36
+00:04:23,416 --> 00:04:27,746
+Next, you'll make Git the source of truth for your clusters with GitOps.

@@ -1,0 +1,143 @@
+1
+00:00:00,600 --> 00:00:04,370
+Welcome to lesson eight: health checks and resource management.
+
+2
+00:00:04,470 --> 00:00:13,936
+You'll teach Kubernetes when your app is healthy, send traffic only to ready Pods, restart stuck ones, and give each container the right amount of CPU and memory.
+
+3
+00:00:15,286 --> 00:00:21,856
+Kubernetes can't tell on its own whether your app works. Probes are regular checks the kubelet runs against each container.
+
+4
+00:00:21,956 --> 00:00:28,222
+The startup probe asks: has it finished starting? It holds off the other probes until it passes.
+
+5
+00:00:28,322 --> 00:00:33,420
+The liveness probe asks: is it stuck? If it fails, the container is restarted.
+
+6
+00:00:33,520 --> 00:00:41,386
+The readiness probe asks: can it handle traffic right now? If it fails, the Pod is removed from the Service, but not restarted.
+
+7
+00:00:42,736 --> 00:00:50,106
+A probe can make an HTTP request, open a TCP connection, run a command, or call a gRPC health check.
+
+8
+00:00:50,206 --> 00:00:54,504
+Timing fields control how often it runs and how many failures are allowed.
+
+9
+00:00:54,604 --> 00:01:01,814
+A startup budget is failure threshold times period. For example, thirty times ten seconds allows up to five minutes to boot.
+
+10
+00:01:03,164 --> 00:01:05,622
+Here's a good setup for a slow-starting app.
+
+11
+00:01:05,722 --> 00:01:16,420
+A startup probe gives it up to five minutes to boot. A liveness probe is a cheap check that the process is alive. And a readiness probe, on a separate endpoint, says whether it can serve traffic.
+
+12
+00:01:17,770 --> 00:01:19,828
+Some rules prevent outages.
+
+13
+00:01:19,928 --> 00:01:32,498
+Most important: a liveness probe must not check dependencies. If every API Pod checks the database, and the database goes down, Kubernetes restarts all of them in a loop. That fixes nothing and makes things worse.
+
+14
+00:01:32,598 --> 00:01:39,504
+Use a startup probe for slow apps instead of a long initial delay, keep probes cheap, and always have a readiness probe.
+
+15
+00:01:40,854 --> 00:01:43,904
+Zero downtime also needs graceful shutdown.
+
+16
+00:01:44,004 --> 00:01:53,934
+When a Pod is deleted, Kubernetes sends SIGTERM and removes the Pod from the Service at the same time. But proxies take a moment to notice, so requests can still arrive.
+
+17
+00:01:54,034 --> 00:01:59,932
+A short preStop sleep gives them time. Then the app should finish its in-flight requests and exit.
+
+18
+00:02:01,282 --> 00:02:07,212
+Now resources. Requests are what the scheduler reserves for a container. Limits are the hard maximum.
+
+19
+00:02:07,312 --> 00:02:17,114
+CPU is compressible: going over the limit only slows the container down. Memory isn't: going over the limit kills the container, with exit code one thirty-seven.
+
+20
+00:02:17,214 --> 00:02:27,784
+Watch the units. Two fifty m means a quarter of a core. One twenty-eight capital M i is mebibytes. A lowercase m on memory means milli-bytes, which is almost certainly a typo.
+
+21
+00:02:29,134 --> 00:02:38,728
+Kubernetes gives each Pod a quality of service class. When a node runs out of memory, BestEffort Pods are evicted first, then Burstable, and Guaranteed last.
+
+22
+00:02:38,828 --> 00:02:46,918
+Always set memory requests and limits, and a CPU request. CPU limits are debated, because they can cause throttling.
+
+23
+00:02:47,018 --> 00:02:54,292
+Size from real measurements. And for Java, use a percentage of memory instead of a fixed heap size that might exceed the limit.
+
+24
+00:02:55,642 --> 00:02:58,820
+Two objects set guardrails for a whole namespace.
+
+25
+00:02:58,920 --> 00:03:04,338
+A LimitRange sets default requests and limits for containers that don't specify them.
+
+26
+00:03:04,438 --> 00:03:12,960
+A ResourceQuota caps the total for the namespace. Once a CPU quota exists, every Pod must have a CPU request, or it's rejected.
+
+27
+00:03:14,310 --> 00:03:16,720
+In the lab, you'll see each behavior.
+
+28
+00:03:16,820 --> 00:03:23,694
+A liveness probe failure restarts the container. A readiness failure keeps the Pod running but removes it from the Service.
+
+29
+00:03:23,794 --> 00:03:30,924
+A container that uses more memory than its limit is OOMKilled. And a Pod requesting more memory than any node has stays Pending.
+
+30
+00:03:32,274 --> 00:03:34,188
+Here's a quick debugging table.
+
+31
+00:03:34,288 --> 00:03:41,978
+Restarts with liveness failures point to the probe itself, or a truly stuck app. Restarts only during startup mean you need a startup probe.
+
+32
+00:03:42,078 --> 00:03:52,536
+OOMKilled means the memory limit is too low. A flat CPU graph at the limit means throttling. And Pending with insufficient CPU means the requests are too large.
+
+33
+00:03:53,886 --> 00:03:55,048
+Let's recap.
+
+34
+00:03:55,148 --> 00:04:03,526
+Startup probes wait, liveness probes restart, and readiness probes remove a Pod from traffic. Never let liveness check dependencies.
+
+35
+00:04:03,626 --> 00:04:10,052
+The scheduler uses requests. Going over the CPU limit throttles, and going over the memory limit kills.
+
+36
+00:04:10,152 --> 00:04:15,138
+Next, you'll expose HTTP apps to the outside world with Ingress.

@@ -1,0 +1,135 @@
+1
+00:00:00,600 --> 00:00:04,178
+Welcome to lesson twenty-three: extending Kubernetes.
+
+2
+00:00:04,278 --> 00:00:17,648
+You'll add your own resource types, write a controller that makes them do something, add admission rules, and learn the other extension points. Many tools you've used, like cert-manager and Argo CD, are built exactly this way.
+
+3
+00:00:18,998 --> 00:00:21,600
+Kubernetes has many extension points.
+
+4
+00:00:21,700 --> 00:00:30,958
+A CRD adds a new kind of object. A controller makes it do something. Admission policies and webhooks validate or change objects as they're created.
+
+5
+00:00:31,058 --> 00:00:38,108
+Before building anything, check whether an existing operator already does it. Every custom controller is software you must maintain.
+
+6
+00:00:39,458 --> 00:00:50,348
+A CRD teaches the API server a new resource type. Once created, you can get, apply and delete it, use RBAC on it, and watch it, just like built-in types.
+
+7
+00:00:50,448 --> 00:00:55,562
+It defines a group, a kind, and versions. One version is the storage version.
+
+8
+00:00:55,662 --> 00:01:02,888
+The status subresource separates what users write from what controllers write, and printer columns make kubectl get useful.
+
+9
+00:01:04,238 --> 00:01:11,432
+The schema validates objects with types, required fields, patterns, minimums, maximums and defaults.
+
+10
+00:01:11,532 --> 00:01:18,166
+CEL rules can check across fields, and transition rules using old self can make a field immutable after creation.
+
+11
+00:01:18,266 --> 00:01:25,796
+Unknown fields are silently dropped. And be careful: deleting a CRD deletes every object of that type in the whole cluster.
+
+12
+00:01:27,146 --> 00:01:33,972
+A CRD alone is just stored data. A controller watches those objects and makes reality match them.
+
+13
+00:01:34,072 --> 00:01:41,890
+An operator is a controller that encodes an expert's knowledge for one application: how to install it, upgrade it, back it up and recover it.
+
+14
+00:01:41,990 --> 00:01:47,952
+Most operators are written in Go with Kubebuilder, but there are frameworks for Python, Java and Rust too.
+
+15
+00:01:49,302 --> 00:01:51,344
+Here's a reconciler in Go.
+
+16
+00:01:51,444 --> 00:02:00,078
+It reads the Website, builds the desired Deployment, sets an owner reference, and applies it. Returning an error means the framework retries with backoff.
+
+17
+00:02:00,178 --> 00:02:04,364
+Then it reports what it observed in the status, through the status subresource.
+
+18
+00:02:05,714 --> 00:02:08,108
+Good controllers follow some rules.
+
+19
+00:02:08,208 --> 00:02:14,346
+Reconcile the whole state every time, and make it safe to repeat. Keep no important state in memory.
+
+20
+00:02:14,446 --> 00:02:23,064
+Set owner references, so children are cleaned up automatically. Use finalizers only for cleanup outside Kubernetes, and always remove them.
+
+21
+00:02:23,164 --> 00:02:30,662
+Report what you observe in the status, return errors for retries, use least-privilege permissions, and run with leader election.
+
+22
+00:02:32,012 --> 00:02:35,878
+For admission rules, prefer CEL policies when they're enough.
+
+23
+00:02:35,978 --> 00:02:44,452
+A ValidatingAdmissionPolicy runs inside the API server. There's no extra service, and no risk of a crashed webhook blocking the cluster.
+
+24
+00:02:44,552 --> 00:02:47,202
+Roll it out with warn first, then deny.
+
+25
+00:02:48,552 --> 00:02:57,570
+When you need arbitrary code, use an admission webhook. The API server sends your service an admission review, and waits for allow, deny, or a patch.
+
+26
+00:02:57,670 --> 00:03:05,456
+Webhooks are a very common cause of outages. If a webhook is down with failure policy Fail, every matching request is rejected.
+
+27
+00:03:05,556 --> 00:03:13,502
+Never intercept your own namespace or kube-system, run at least two replicas, keep timeouts short, and automate certificates.
+
+28
+00:03:14,852 --> 00:03:20,654
+In the lab, you'll create a Website CRD and see validation reject bad objects.
+
+29
+00:03:20,754 --> 00:03:28,924
+Then you'll run a tiny controller that creates a ConfigMap, Deployment and Service for each Website, reconciles changes, and repairs drift.
+
+30
+00:03:29,024 --> 00:03:36,042
+You'll watch garbage collection clean up, write a kubectl plugin, and see how a broken webhook blocks Pod creation.
+
+31
+00:03:37,392 --> 00:03:38,538
+Let's recap.
+
+32
+00:03:38,638 --> 00:03:45,144
+A CRD adds a new type, a controller gives it behavior, and an operator automates expert knowledge.
+
+33
+00:03:45,244 --> 00:03:53,318
+Validate with schemas and CEL, write level-triggered controllers with owner references, and prefer CEL admission policies over webhooks.
+
+34
+00:03:53,418 --> 00:03:59,540
+Next, the final lesson: multi-cluster, multi-tenancy and platform engineering.

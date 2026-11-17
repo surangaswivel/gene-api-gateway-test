@@ -1,0 +1,151 @@
+1
+00:00:00,600 --> 00:00:04,274
+Welcome to lesson nineteen: running clusters in production.
+
+2
+00:00:04,374 --> 00:00:12,720
+You'll learn how clusters are built, kept up to date, backed up, restored and kept secure over their whole life. This is where most real incidents come from.
+
+3
+00:00:14,070 --> 00:00:16,688
+The first choice is managed or self-managed.
+
+4
+00:00:16,788 --> 00:00:25,278
+With managed services, the provider runs the control plane and etcd. With self-managed tools like kubeadm, you do everything.
+
+5
+00:00:25,378 --> 00:00:32,636
+But even on a managed service, upgrades, add-ons, workload security and backups of your data are still your job.
+
+6
+00:00:33,986 --> 00:00:42,652
+To install with kubeadm, prepare every node: swap, kernel modules and network settings, and containerd with the systemd cgroup driver.
+
+7
+00:00:42,752 --> 00:00:54,906
+Install the Kubernetes packages from pkgs dot k8s dot io, which has one repository per minor version, and hold them so routine updates don't upgrade them by accident. The old repositories were shut down.
+
+8
+00:00:55,006 --> 00:01:02,120
+Then run kubeadm init, with a control-plane endpoint from day one, install a network plugin, and join the other nodes.
+
+9
+00:01:03,470 --> 00:01:09,608
+Kubernetes releases a new minor version about three times a year, and each one is supported for about fourteen months.
+
+10
+00:01:09,708 --> 00:01:12,966
+You can only upgrade one minor version at a time.
+
+11
+00:01:13,066 --> 00:01:23,604
+The skew policy says a kubelet must never be newer than the API server, though it may be up to three versions older. That's why you always upgrade the control plane first, then the nodes.
+
+12
+00:01:24,954 --> 00:01:30,308
+Before upgrading, read the release notes for every version, especially API removals.
+
+13
+00:01:30,408 --> 00:01:35,490
+Scan for removed APIs with tools like pluto, in the live cluster and in your charts and Git.
+
+14
+00:01:35,590 --> 00:01:44,208
+Check your add-ons' compatibility, back up etcd and the certificates, make sure drains can finish, and upgrade a staging cluster first.
+
+15
+00:01:45,558 --> 00:01:54,336
+On the first control-plane node, upgrade the kubeadm package, check the plan, and apply the upgrade. This also renews the certificates.
+
+16
+00:01:54,436 --> 00:02:00,654
+Then drain the node, upgrade the kubelet and kubectl, restart the kubelet, and uncordon it.
+
+17
+00:02:00,754 --> 00:02:06,876
+Other control-plane nodes use kubeadm upgrade node. Workers are upgraded one at a time.
+
+18
+00:02:06,976 --> 00:02:12,378
+On clouds, replacing nodes with new ones is usually cleaner than upgrading them in place.
+
+19
+00:02:13,728 --> 00:02:19,146
+Back up etcd with etcdctl snapshot save, and verify it with etcdutl.
+
+20
+00:02:19,246 --> 00:02:25,800
+Do it on a schedule, copy the snapshots off the cluster, and encrypt them, because they contain every Secret.
+
+21
+00:02:25,900 --> 00:02:32,182
+Back up the certificates too. And test restores regularly. A backup you've never restored is only a hope.
+
+22
+00:02:33,532 --> 00:02:39,814
+To restore, restore the snapshot into a new data directory, and point the etcd static Pod at it.
+
+23
+00:02:39,914 --> 00:02:48,836
+A restore brings back every object as it was at snapshot time. Anything created later is gone, and data inside volumes isn't included at all.
+
+24
+00:02:48,936 --> 00:02:55,218
+So also use Velero for volumes, database-native backups, and GitOps to rebuild configuration.
+
+25
+00:02:56,568 --> 00:03:02,466
+kubeadm's certificate authority lasts ten years, but component certificates last one year.
+
+26
+00:03:02,566 --> 00:03:10,896
+Upgrading renews them automatically. A cluster that's never upgraded fails after exactly one year with certificate has expired errors.
+
+27
+00:03:10,996 --> 00:03:21,534
+Renew with kubeadm certs renew all, then restart the control-plane components. And keep the super admin kubeconfig, which bypasses RBAC, for emergencies only.
+
+28
+00:03:22,884 --> 00:03:31,246
+To encrypt Secrets in etcd, give the API server an encryption configuration, ideally using an external key management service.
+
+29
+00:03:31,346 --> 00:03:37,372
+The first provider is used for writing, so identity, which means no encryption, must be last.
+
+30
+00:03:37,472 --> 00:03:42,362
+Existing Secrets stay unencrypted until they're rewritten, so replace them all once.
+
+31
+00:03:43,712 --> 00:03:48,266
+In the lab, you'll check versions and certificates, and preview an upgrade.
+
+32
+00:03:48,366 --> 00:03:55,560
+You'll take an etcd backup, make changes, restore, and see the cluster return to exactly its state at snapshot time.
+
+33
+00:03:55,660 --> 00:04:01,766
+And you'll renew a certificate, and see that the running API server only uses it after a restart.
+
+34
+00:04:03,116 --> 00:04:04,390
+Let's recap.
+
+35
+00:04:04,490 --> 00:04:08,516
+Upgrade one minor version at a time, control plane first.
+
+36
+00:04:08,616 --> 00:04:16,626
+Back up etcd and the certificates off-site, and test restores. Remember that restores are point-in-time and exclude volume data.
+
+37
+00:04:16,726 --> 00:04:20,448
+Watch certificate expiry, and encrypt Secrets at rest.
+
+38
+00:04:20,548 --> 00:04:25,214
+Next, you'll learn to see what's happening inside your cluster with observability.

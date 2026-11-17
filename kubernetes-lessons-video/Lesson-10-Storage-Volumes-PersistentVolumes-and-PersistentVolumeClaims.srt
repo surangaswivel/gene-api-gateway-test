@@ -1,0 +1,139 @@
+1
+00:00:00,600 --> 00:00:03,138
+Welcome to lesson ten: storage.
+
+2
+00:00:03,238 --> 00:00:10,944
+You'll keep data when containers restart, share files between containers, and give apps persistent disks that survive Pod deletion.
+
+3
+00:00:12,294 --> 00:00:18,800
+Each container starts with a fresh copy of its image's files. Anything written there is lost when the container restarts.
+
+4
+00:00:18,900 --> 00:00:27,102
+Stateless apps like web servers don't care. But anything stateful, such as databases, uploads or queues, needs a volume.
+
+5
+00:00:28,452 --> 00:00:30,670
+Volumes differ by how long they live.
+
+6
+00:00:30,770 --> 00:00:37,580
+An emptyDir lives as long as the Pod. It survives container restarts, and two containers in a Pod can share it.
+
+7
+00:00:37,680 --> 00:00:47,338
+hostPath uses a folder on the node. Avoid it for apps: the data is tied to one node, and mounting sensitive paths can give a container control of the whole node.
+
+8
+00:00:47,438 --> 00:00:51,128
+For real persistent data, use a persistent volume claim.
+
+9
+00:00:52,478 --> 00:00:55,768
+Kubernetes separates asking for storage from providing it.
+
+10
+00:00:55,868 --> 00:01:09,686
+A persistent volume claim is like an order form: I need ten gigabytes of a fast type. A persistent volume is the actual disk. A storage class is the catalog of disk types, and a CSI driver is the supplier that creates the disks.
+
+11
+00:01:09,786 --> 00:01:17,268
+Normally this is dynamic. You create a claim, the driver creates the disk and the volume automatically, and the two are bound together.
+
+12
+00:01:18,618 --> 00:01:22,500
+Here's a claim for ten gigabytes, and a Pod using it by name.
+
+13
+00:01:22,600 --> 00:01:29,218
+Claims are namespaced, so the Pod must be in the same namespace. Volumes and storage classes are cluster-wide.
+
+14
+00:01:30,568 --> 00:01:33,554
+Access modes say how a volume can be shared.
+
+15
+00:01:33,654 --> 00:01:42,352
+Read write once means one node, not one Pod. Two Pods on the same node can share it. Use read write once Pod when you truly need a single writer.
+
+16
+00:01:42,452 --> 00:01:54,814
+Block storage, like AWS EBS, only supports single-node access. Asking for read write many on it leaves the claim pending forever. For shared files, use file storage like EFS or NFS.
+
+17
+00:01:56,164 --> 00:01:59,390
+A storage class has three settings that matter a lot.
+
+18
+00:01:59,490 --> 00:02:07,372
+Reclaim policy Delete, the default, means deleting the claim deletes the disk and all its data. Use Retain for anything you can't lose.
+
+19
+00:02:07,472 --> 00:02:15,370
+Wait for first consumer creates the disk only when a Pod is scheduled, in the same zone as that Pod. That avoids disks stuck in the wrong zone.
+
+20
+00:02:15,470 --> 00:02:18,568
+And allow volume expansion lets you grow a claim later.
+
+21
+00:02:19,918 --> 00:02:22,552
+A claim is pending until it's bound to a volume.
+
+22
+00:02:22,652 --> 00:02:29,910
+When a claim with Retain is deleted, its volume becomes Released. The data is still there, but it isn't reused automatically.
+
+23
+00:02:30,010 --> 00:02:35,012
+A claim that's in use by a Pod is protected: deleting it waits until the Pod is gone.
+
+24
+00:02:35,112 --> 00:02:41,874
+Snapshots are useful, but they aren't a complete backup strategy. Tools like Velero back up both objects and data.
+
+25
+00:02:43,224 --> 00:02:48,594
+Here's a common trap: a Deployment with three replicas, all using the same single-node disk.
+
+26
+00:02:48,694 --> 00:02:58,320
+Pods on other nodes fail with a multi-attach error. Even one replica can hit this during a rolling update. And several database processes writing to one disk can corrupt it.
+
+27
+00:02:58,420 --> 00:03:08,014
+Use one replica with the Recreate strategy, or a StatefulSet, which gives each Pod its own disk. For production databases, consider a managed service.
+
+28
+00:03:09,364 --> 00:03:15,278
+In the lab, you'll lose a file on restart, then share files between two containers with emptyDir.
+
+29
+00:03:15,378 --> 00:03:21,148
+You'll create a claim, write data, delete the Pod, and see the data survive in a new Pod.
+
+30
+00:03:21,248 --> 00:03:29,562
+And you'll watch the Delete and Retain policies in action. If a non-root app can't write to a fresh volume, set fs group in the security context.
+
+31
+00:03:30,912 --> 00:03:32,106
+Let's recap.
+
+32
+00:03:32,206 --> 00:03:37,544
+Container files and emptyDir are temporary, and hostPath is for system agents only.
+
+33
+00:03:37,644 --> 00:03:42,982
+A claim requests storage, and a storage class with a CSI driver creates the disk.
+
+34
+00:03:43,082 --> 00:03:49,316
+Read write once means one node. The Delete policy destroys data, so use Retain where it matters.
+
+35
+00:03:49,416 --> 00:03:56,418
+Next, you'll meet StatefulSets, which give each Pod its own disk, plus DaemonSets, Jobs and CronJobs.

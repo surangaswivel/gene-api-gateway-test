@@ -1,0 +1,139 @@
+1
+00:00:00,600 --> 00:00:03,314
+Welcome to lesson eighteen, and to level four.
+
+2
+00:00:03,414 --> 00:00:13,360
+Up to now you've learned what each object does. Now you'll learn how Kubernetes actually works inside, so you can reason about any behavior or failure from first principles.
+
+3
+00:00:14,710 --> 00:00:17,504
+Four principles explain almost everything.
+
+4
+00:00:17,604 --> 00:00:29,934
+Everything is an API object stored in etcd. Components never talk to each other directly; they only read and write objects through the API server. You write the spec, and controllers write the status.
+
+5
+00:00:30,034 --> 00:00:38,460
+And controllers run reconciliation loops that react to the current state, not to individual events. So if an event is missed, the next loop catches up.
+
+6
+00:00:39,810 --> 00:00:43,148
+Every request goes through a pipeline in the API server.
+
+7
+00:00:43,248 --> 00:00:57,994
+Authentication, audit, priority and fairness, and authorization. Then mutating admission, which can change the object, for example to inject a sidecar. Then schema validation, then validating admission, such as Pod Security.
+
+8
+00:00:58,094 --> 00:01:06,888
+Finally it's stored in etcd, and everyone watching is notified. An admission webhook that's down can block Pod creation across the whole cluster.
+
+9
+00:01:08,238 --> 00:01:10,056
+A few mechanics matter.
+
+10
+00:01:10,156 --> 00:01:17,270
+Every object has a resource version. An update based on an old version fails with a conflict, so no change is lost.
+
+11
+00:01:17,370 --> 00:01:26,148
+Generation and observed generation tell you whether a controller has processed the latest spec. Server-side apply tracks which tool owns which field.
+
+12
+00:01:26,248 --> 00:01:32,306
+And clients don't poll. They open watches, and controllers keep local caches called informers.
+
+13
+00:01:33,656 --> 00:01:39,554
+etcd holds all cluster state. Lose it without a backup and you lose the cluster's configuration.
+
+14
+00:01:39,654 --> 00:01:43,408
+Secrets are stored readable unless encryption at rest is configured.
+
+15
+00:01:43,508 --> 00:01:55,278
+etcd members agree on every write using the Raft algorithm, and a write needs a majority. Three members survive one failure, five survive two. Four is no better than three, so always use an odd number.
+
+16
+00:01:55,378 --> 00:01:59,836
+If quorum is lost, nothing can change, but running Pods keep running.
+
+17
+00:02:01,186 --> 00:02:09,644
+A controller is a loop: read the desired state, observe the actual state, take one step toward the desired state, and write the status.
+
+18
+00:02:09,744 --> 00:02:17,466
+A Deployment doesn't create Pods directly. A chain of independent controllers does, connected only through API objects.
+
+19
+00:02:17,566 --> 00:02:30,152
+Dependents point to their owners, so the garbage collector cleans them up. Finalizers make deletion wait for cleanup. And leader election, using Lease objects, ensures only one copy of a controller acts at a time.
+
+20
+00:02:31,502 --> 00:02:37,144
+The scheduler only decides. It writes the node name on the Pod, and never starts anything.
+
+21
+00:02:37,244 --> 00:02:51,254
+The kubelet on each node watches for Pods assigned to it. It asks the container runtime to create a sandbox, held by a tiny pause container, calls the network plugin to get an IP, mounts volumes, starts the containers, and runs probes.
+
+22
+00:02:51,354 --> 00:02:58,212
+It also sends a heartbeat by renewing a Lease about every ten seconds. When that stops, the node is marked not ready.
+
+23
+00:02:59,562 --> 00:03:01,060
+Here's the full journey.
+
+24
+00:03:01,160 --> 00:03:14,578
+kubectl sends the request, the API server runs its pipeline, and the Deployment is stored. The Deployment controller creates a ReplicaSet, which creates Pods. The scheduler binds them, and the kubelet starts them.
+
+25
+00:03:14,678 --> 00:03:22,272
+When probes pass, the Pod becomes ready, the endpoint controller adds it to the Service, and kube-proxy updates the rules.
+
+26
+00:03:22,372 --> 00:03:28,990
+Each step is a separate component. If one is broken, the chain stops exactly there, and that's where troubleshooting should look.
+
+27
+00:03:30,340 --> 00:03:37,966
+In a highly available control plane, API servers are stateless, so all of them serve traffic behind a load balancer.
+
+28
+00:03:38,066 --> 00:03:42,668
+The scheduler and controller manager run everywhere, but only the leader acts.
+
+29
+00:03:42,768 --> 00:03:49,530
+And etcd needs three or more members in separate failure zones. Managed services run all of this for you.
+
+30
+00:03:50,880 --> 00:03:58,314
+In the lab, you'll watch kubectl's HTTP requests and open a raw watch stream, exactly like a controller.
+
+31
+00:03:58,414 --> 00:04:07,528
+You'll trigger a conflict, read a Secret directly from etcd to see why encryption matters, and play the role of a controller by removing a finalizer yourself.
+
+32
+00:04:08,878 --> 00:04:10,040
+Let's recap.
+
+33
+00:04:10,140 --> 00:04:15,382
+Everything goes through the API server, and only the API server talks to etcd.
+
+34
+00:04:15,482 --> 00:04:24,068
+Controllers are level-triggered loops chained together through objects. The scheduler binds, and the kubelet runs containers through standard interfaces.
+
+35
+00:04:24,168 --> 00:04:29,618
+Next, you'll learn to install, upgrade, back up and secure clusters in production.

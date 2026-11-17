@@ -1,0 +1,147 @@
+1
+00:00:00,600 --> 00:00:04,994
+Welcome to lesson twenty-two: GitOps with Argo CD and Flux.
+
+2
+00:00:05,094 --> 00:00:15,456
+You'll make Git the single source of truth for what runs in your clusters. Deployments become pull requests, rollbacks become git revert, and drift is detected and fixed automatically.
+
+3
+00:00:16,806 --> 00:00:25,536
+GitOps has four principles. The desired state is declarative, versioned in Git, pulled automatically by agents, and continuously reconciled.
+
+4
+00:00:25,636 --> 00:00:34,702
+In classic CI and CD, the pipeline pushes changes with cluster credentials, and nobody notices if someone changes the cluster by hand later.
+
+5
+00:00:34,802 --> 00:00:42,508
+With GitOps, an agent inside the cluster pulls from Git and keeps correcting any difference. The credentials stay inside the cluster.
+
+6
+00:00:43,858 --> 00:00:53,820
+The benefits are big: a full audit trail, reviews through pull requests, easy rollback, drift detection, better security, and fast disaster recovery.
+
+7
+00:00:53,920 --> 00:01:03,322
+But GitOps doesn't solve everything alone. You still need a plan for secrets, data backups, ordering, emergencies, and fields that controllers change.
+
+8
+00:01:04,672 --> 00:01:08,522
+Keep app code and deployment config in separate repositories.
+
+9
+00:01:08,622 --> 00:01:16,504
+The app repository builds, scans and signs the image, then opens a pull request in the config repository with the new digest.
+
+10
+00:01:16,604 --> 00:01:25,606
+In the config repository, use one directory per environment on a single branch. Avoid a branch per environment, which leads to drift and constant conflicts.
+
+11
+00:01:26,956 --> 00:01:31,014
+Argo CD is a popular GitOps tool with a rich web UI.
+
+12
+00:01:31,114 --> 00:01:38,756
+Its application controller compares the cluster with Git, and its repo server renders manifests from plain YAML, Kustomize or Helm.
+
+13
+00:01:38,856 --> 00:01:43,330
+Note that it renders Helm charts itself, so they don't appear in helm list.
+
+14
+00:01:44,680 --> 00:01:51,314
+An Application says: take this path in this Git repository, and deploy it to this cluster and namespace.
+
+15
+00:01:51,414 --> 00:01:58,928
+Automated sync applies Git changes. Prune deletes resources removed from Git. Self heal reverts manual changes in the cluster.
+
+16
+00:01:59,028 --> 00:02:07,134
+And ignore differences tells Argo CD to leave fields alone that a controller owns, like replicas when an HPA manages scaling.
+
+17
+00:02:08,484 --> 00:02:16,654
+Argo CD shows two separate statuses. Sync status says whether the cluster matches Git. Health status says whether it actually works.
+
+18
+00:02:16,754 --> 00:02:22,012
+Synced doesn't mean healthy. A Deployment can match Git perfectly while crash-looping.
+
+19
+00:02:22,112 --> 00:02:30,618
+For ordering, use sync waves, so CRDs and namespaces come first, and hooks, such as a migration Job that runs before the sync.
+
+20
+00:02:31,968 --> 00:02:41,402
+AppProjects are guardrails for teams. They limit which repositories, clusters and namespaces a team can use, and what kinds of resources they can create.
+
+21
+00:02:41,502 --> 00:02:51,160
+ApplicationSets generate many Applications from one template: one per environment, one per cluster, one per folder, or even one per open pull request.
+
+22
+00:02:51,260 --> 00:02:57,318
+Because Argo CD can deploy anything, protect the config repository just like production itself.
+
+23
+00:02:58,668 --> 00:03:05,622
+Flux is the other major GitOps tool. It's a set of focused controllers configured entirely with custom resources.
+
+24
+00:03:05,722 --> 00:03:16,532
+A GitRepository fetches the source, and Flux's Kustomization object applies it, with pruning, health checks and built-in SOPS decryption. HelmRelease creates real Helm releases.
+
+25
+00:03:16,632 --> 00:03:22,274
+flux bootstrap installs Flux and commits its own manifests, so Flux manages itself.
+
+26
+00:03:23,624 --> 00:03:32,162
+Both tools are excellent. Argo CD has a strong UI and central management of many clusters. Flux is lightweight and fully Kubernetes-native.
+
+27
+00:03:32,262 --> 00:03:44,464
+For safe releases, add progressive delivery. Argo Rollouts shifts traffic step by step, checks metrics from Prometheus, and automatically rolls back if errors rise. Flagger does the same for Flux.
+
+28
+00:03:45,814 --> 00:03:51,520
+Never commit plain Secrets. The External Secrets Operator keeps values out of Git entirely.
+
+29
+00:03:51,620 --> 00:03:57,918
+Make Git the only way to change production, with read-only access for people and a documented emergency procedure.
+
+30
+00:03:58,018 --> 00:04:05,628
+Turn on self heal and prune, validate changes in CI, deploy by digest, and practice rebuilding a cluster from Git.
+
+31
+00:04:06,978 --> 00:04:11,740
+In the lab, you'll install Argo CD and deploy your first Application.
+
+32
+00:04:11,840 --> 00:04:21,130
+You'll watch self heal revert a manual change, generate dev and prod from one ApplicationSet, and fix a fight between an HPA and Argo CD.
+
+33
+00:04:21,230 --> 00:04:25,496
+With a GitHub fork, you'll deploy by commit and roll back by revert.
+
+34
+00:04:26,846 --> 00:04:27,944
+Let's recap.
+
+35
+00:04:28,044 --> 00:04:34,006
+With GitOps, the desired state lives in Git and an in-cluster agent keeps the cluster matching it.
+
+36
+00:04:34,106 --> 00:04:41,604
+Use a config repository with directories per environment, remember that synced isn't healthy, and keep secrets out of Git.
+
+37
+00:04:41,704 --> 00:04:46,338
+Next, you'll extend Kubernetes with your own resources and controllers.

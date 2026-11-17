@@ -1,0 +1,159 @@
+1
+00:00:00,600 --> 00:00:03,938
+Welcome to lesson seventeen: troubleshooting a cluster.
+
+2
+00:00:04,038 --> 00:00:14,160
+You'll learn to fix problems methodically instead of guessing: a repeatable method, a decision tree for every Pod state, the debugging toolkit, and how to fix nodes and the control plane.
+
+3
+00:00:15,510 --> 00:00:16,816
+Start with a method.
+
+4
+00:00:16,916 --> 00:00:24,878
+Define exactly what's wrong and since when. Find the scope. Ask what changed recently. Follow the layers until you find where it breaks.
+
+5
+00:00:24,978 --> 00:00:32,220
+Read the actual error message. Test one hypothesis at a time. Verify that the user's symptom is gone. And write it down.
+
+6
+00:00:32,320 --> 00:00:37,642
+Avoid restarting things at random. It hides the evidence and doesn't explain the cause.
+
+7
+00:00:38,992 --> 00:00:43,434
+Work through the layers one at a time, from the user inward, or from the Pod outward.
+
+8
+00:00:43,534 --> 00:00:54,376
+DNS and the load balancer, the Ingress, the Service and its endpoints, network policies, the Pod, the container, the node, the control plane, and finally the infrastructure.
+
+9
+00:00:55,726 --> 00:00:59,576
+Start with kubectl get pods, then follow the status.
+
+10
+00:00:59,676 --> 00:01:05,398
+Pending is a scheduling problem. If there are no events at all, the scheduler itself may be down.
+
+11
+00:01:05,498 --> 00:01:15,668
+ContainerCreating stuck usually means a volume or network problem. ImagePullBackOff is an image problem. CreateContainerConfigError is a missing ConfigMap or Secret.
+
+12
+00:01:15,768 --> 00:01:24,738
+CrashLoopBackOff means the app keeps exiting, so read the previous logs and the exit code. And Running but not ready means the readiness probe is failing.
+
+13
+00:01:26,088 --> 00:01:28,082
+Exit codes tell you a lot.
+
+14
+00:01:28,182 --> 00:01:38,672
+One twenty-seven means command not found. One thirty-seven means the process was killed, usually because it ran out of memory. One forty-three means a normal stop with SIGTERM.
+
+15
+00:01:38,772 --> 00:01:44,222
+Zero means the process exited successfully, which is a problem for a server that should keep running.
+
+16
+00:01:45,572 --> 00:01:47,134
+Here's the core toolkit.
+
+17
+00:01:47,234 --> 00:01:54,828
+get with dash o wide, events sorted by time, describe, logs with dash dash previous, exec, port-forward, and top.
+
+18
+00:01:54,928 --> 00:02:00,042
+Events are kept for only about an hour, so look quickly, or ship them to your logging system.
+
+19
+00:02:01,392 --> 00:02:05,210
+Many production images have no shell, so exec fails.
+
+20
+00:02:05,310 --> 00:02:13,992
+kubectl debug attaches an ephemeral container with its own tools, sharing the target's processes and network. Netshoot is a full network toolkit.
+
+21
+00:02:14,092 --> 00:02:19,318
+It can also copy a crashing Pod with a different command, or give you a shell on a node.
+
+22
+00:02:20,668 --> 00:02:27,750
+For a NotReady node, get a shell on it and check the kubelet's status and its logs, which usually say why it fails.
+
+23
+00:02:27,850 --> 00:02:32,196
+Check the container runtime with crictl, and check disk space and memory.
+
+24
+00:02:32,296 --> 00:02:41,234
+Common causes are a stopped kubelet, a stopped runtime, a full disk, an expired certificate, or network problems reaching the API server.
+
+25
+00:02:42,584 --> 00:02:45,106
+The symptom often points to the component.
+
+26
+00:02:45,206 --> 00:02:56,160
+If kubectl fails for everything, suspect the API server. Pending with no events, suspect the scheduler. A Deployment with no ReplicaSet, suspect the controller manager.
+
+27
+00:02:56,260 --> 00:03:04,766
+On kubeadm clusters, these run as static Pods from files on the control-plane node. If the API server is down, use crictl there.
+
+28
+00:03:04,866 --> 00:03:10,572
+On managed clusters, you can't edit the control plane. Check the provider's status instead.
+
+29
+00:03:11,922 --> 00:03:13,852
+Sometimes things won't delete.
+
+30
+00:03:13,952 --> 00:03:25,594
+A Pod stuck terminating usually sits on a node that's gone. Force-deleting is possible, but be careful with StatefulSet Pods: if the node is still running, you could end up with two Pods with the same identity.
+
+31
+00:03:25,694 --> 00:03:35,816
+A namespace stuck terminating usually has custom resources whose operator was removed, or a broken aggregated API. Removing finalizers by hand skips their cleanup.
+
+32
+00:03:37,166 --> 00:03:44,360
+Here's a worked example. Users get five oh three on slash api, starting just after a new version was deployed.
+
+33
+00:03:44,460 --> 00:03:52,934
+The Ingress is fine. The Service has no endpoints. The Pods are running but not ready, and describe shows the readiness probe gets a four oh four.
+
+34
+00:03:53,034 --> 00:04:01,876
+The new version moved its health endpoint. Roll back first to stop the errors, then fix the probe path properly. Notice that nothing was restarted at random.
+
+35
+00:04:03,226 --> 00:04:08,212
+The lab gives you nine broken workloads to diagnose and fix, each a classic failure.
+
+36
+00:04:08,312 --> 00:04:16,322
+You'll debug an image with no shell, stop a node's kubelet and bring it back, and take down the scheduler to see the pending with no events pattern.
+
+37
+00:04:17,672 --> 00:04:18,930
+Let's recap.
+
+38
+00:04:19,030 --> 00:04:23,120
+Follow the method, and let the Pod status point you to the first command.
+
+39
+00:04:23,220 --> 00:04:30,910
+Know your exit codes, use kubectl debug when there's no shell, and check the kubelet, runtime and disk on broken nodes.
+
+40
+00:04:31,010 --> 00:04:37,388
+That completes level three. Next, level four begins with a deep dive into how the cluster really works.

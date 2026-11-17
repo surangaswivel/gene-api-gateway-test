@@ -1,0 +1,155 @@
+1
+00:00:00,600 --> 00:00:03,394
+Welcome to lesson twenty-four, the final lesson.
+
+2
+00:00:03,494 --> 00:00:18,000
+You'll step back from single clusters: sharing clusters safely between teams, running fleets across regions, planning disaster recovery, controlling cost, and building an internal platform that makes Kubernetes easy and safe for developers.
+
+3
+00:00:19,350 --> 00:00:31,232
+Why run several clusters? To limit the blast radius of a bad change, to separate environments, to serve users in several regions, to meet data residency rules, and to isolate untrusted tenants.
+
+4
+00:00:31,332 --> 00:00:37,326
+But every cluster needs its own upgrades, add-ons and attention, and small clusters waste capacity.
+
+5
+00:00:37,426 --> 00:00:43,996
+Most organizations mix a few large, well-governed shared clusters with dedicated ones where isolation demands it.
+
+6
+00:00:45,346 --> 00:00:47,964
+Sharing a cluster is called multi-tenancy.
+
+7
+00:00:48,064 --> 00:00:55,978
+Soft multi-tenancy is for teams in the same company. The goal is to prevent accidents and noisy neighbors, using namespaces and guardrails.
+
+8
+00:00:56,078 --> 00:01:06,360
+Hard multi-tenancy is for customers or untrusted code, where tenants might be malicious. That needs separate clusters, virtual clusters, or sandboxed runtimes.
+
+9
+00:01:07,710 --> 00:01:14,216
+For soft multi-tenancy, apply a tenant template to every team namespace. It combines everything you've learned.
+
+10
+00:01:14,316 --> 00:01:29,350
+Access through a role binding to the team's group. A resource quota for a fair share, and a limit range for defaults. Default-deny network policies. The restricted Pod security standard. Admission policies, an Argo CD project, and cost labels.
+
+11
+00:01:30,700 --> 00:01:33,206
+Namespaces don't isolate everything.
+
+12
+00:01:33,306 --> 00:01:44,260
+Cluster-scoped resources like CRDs are shared, so two teams needing different versions conflict. All Pods on a node share the kernel. And one tenant can overload the API server.
+
+13
+00:01:44,360 --> 00:01:56,194
+Virtual clusters help: each tenant gets its own API server and can even be cluster admin, while their Pods actually run in one namespace of the host. But a virtual cluster doesn't isolate the kernel.
+
+14
+00:01:57,544 --> 00:02:03,458
+To manage a fleet, create clusters as code, with Terraform, Cluster API or Crossplane.
+
+15
+00:02:03,558 --> 00:02:12,048
+Give every cluster the same platform baseline: networking, certificates, ingress, secrets, monitoring, policies and backups.
+
+16
+00:02:12,148 --> 00:02:20,094
+And deliver it with GitOps. An ApplicationSet with a cluster generator can install the baseline on every production cluster automatically.
+
+17
+00:02:21,444 --> 00:02:29,518
+Global load balancing sends users to the right cluster, and tools like the Multi-Cluster Services API connect services across clusters.
+
+18
+00:02:29,618 --> 00:02:35,068
+The hard part is data. Stateless services are easy to run in several regions. Data isn't.
+
+19
+00:02:35,168 --> 00:02:42,474
+Active-passive is simpler but loses some time and possibly some data on failover. Active-active needs databases designed for it.
+
+20
+00:02:42,574 --> 00:02:47,512
+Agree with the business on the recovery time objective and recovery point objective.
+
+21
+00:02:48,862 --> 00:02:52,840
+Disaster recovery strategies trade cost against recovery time.
+
+22
+00:02:52,940 --> 00:03:06,038
+Backup and restore is cheapest but takes hours. A pilot light keeps data replicated with a minimal standby. A warm standby runs a scaled-down copy. Active-active recovers almost instantly, at the highest cost.
+
+23
+00:03:06,138 --> 00:03:11,140
+Whatever you choose, test it. Run regular game days where you actually fail over.
+
+24
+00:03:12,490 --> 00:03:23,364
+Kubernetes is powerful but complex. Platform engineering gives developers an internal platform with golden paths: the easy, supported, secure-by-default way to build and run software.
+
+25
+00:03:23,464 --> 00:03:34,578
+A developer picks a template in a portal like Backstage, and gets a repository with CI, a guarded namespace, a database through a Crossplane claim, dashboards and alerts, all through GitOps.
+
+26
+00:03:34,678 --> 00:03:39,472
+The first deploy happens in minutes, with no tickets, and every guardrail applied.
+
+27
+00:03:40,822 --> 00:03:45,232
+A good platform is treated as a product, with developers as its customers.
+
+28
+00:03:45,332 --> 00:03:53,374
+Make the right way the easiest way, but allow documented exceptions. Offer self-service instead of tickets, with security built in.
+
+29
+00:03:53,474 --> 00:04:03,036
+Hide what developers don't need, but never hide what they need to debug. Start small, and measure outcomes, like the DORA metrics and developer satisfaction.
+
+30
+00:04:04,386 --> 00:04:07,276
+Kubernetes makes it easy to waste money invisibly.
+
+31
+00:04:07,376 --> 00:04:14,810
+Allocate cost to teams by resource requests, because requests reserve capacity. Right-size them from real usage.
+
+32
+00:04:14,910 --> 00:04:26,296
+Autoscale everything that can be, use spot instances for work that tolerates interruption, scale down non-production at night, and watch hidden costs like idle load balancers and log volume.
+
+33
+00:04:27,646 --> 00:04:35,960
+In the lab, you'll build a tenant template and prove the isolation between two teams: access, Pod security, quota and network.
+
+34
+00:04:36,060 --> 00:04:44,534
+You'll give a third team a virtual cluster where they're cluster admin, apply a baseline to a small fleet, and produce a cost report by namespace.
+
+35
+00:04:45,884 --> 00:04:47,942
+Let's recap the final lesson.
+
+36
+00:04:48,042 --> 00:04:55,588
+Mix shared, governed clusters with dedicated ones. Give every team a tenant template, and remember what namespaces can't isolate.
+
+37
+00:04:55,688 --> 00:05:02,594
+Manage fleets as code with a GitOps baseline, and let data and recovery objectives drive disaster recovery.
+
+38
+00:05:02,694 --> 00:05:07,136
+And build your platform as a product, with golden paths and self-service.
+
+39
+00:05:07,236 --> 00:05:15,214
+Congratulations. You've completed all four levels of the Kubernetes course, from your first container to running platforms in production.

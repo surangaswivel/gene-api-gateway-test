@@ -1,0 +1,147 @@
+1
+00:00:00,600 --> 00:00:03,042
+Welcome to lesson nine: Ingress.
+
+2
+00:00:03,142 --> 00:00:12,400
+You'll expose many HTTP apps through one entry point, route by domain name and path, add HTTPS, and meet the newer Gateway API.
+
+3
+00:00:13,750 --> 00:00:21,264
+Using a LoadBalancer Service for every app means one paid cloud load balancer per app, each with its own TLS setup.
+
+4
+00:00:21,364 --> 00:00:27,118
+An Ingress puts one entry point in front of many Services, and routes by host name and path.
+
+5
+00:00:27,218 --> 00:00:34,988
+It works at the HTTP level, so it can read hosts, paths and headers. A Service only sees IP addresses and ports.
+
+6
+00:00:36,338 --> 00:00:38,700
+An Ingress has two separate pieces.
+
+7
+00:00:38,800 --> 00:00:46,730
+The Ingress resource is just routing rules that you write. The Ingress controller is a real proxy that reads those rules and routes the traffic.
+
+8
+00:00:46,830 --> 00:00:55,208
+Kubernetes doesn't include a controller. Without one installed, an Ingress object does nothing at all. That's the number one beginner confusion.
+
+9
+00:00:55,308 --> 00:00:59,158
+The ingress class name field says which controller should handle it.
+
+10
+00:01:00,508 --> 00:01:08,534
+There are many controllers: the cloud providers' own, Traefik, HAProxy, Kong, Istio, Cilium, and more.
+
+11
+00:01:08,634 --> 00:01:18,068
+One warning. The community ingress-nginx project, once the most widely used, has been retired. Its maintenance ended in March twenty twenty-six.
+
+12
+00:01:18,168 --> 00:01:25,538
+It's fine for learning, but don't choose it for new production clusters. AI answers trained on older material often still recommend it.
+
+13
+00:01:26,888 --> 00:01:36,226
+Here's an Ingress. For the host shop dot example dot com, paths starting with slash api go to the api Service, and everything else goes to the web Service.
+
+14
+00:01:36,326 --> 00:01:44,224
+The backend port is the Service's port, not the container's port. And an Ingress can only send traffic to Services in its own namespace.
+
+15
+00:01:45,574 --> 00:01:57,568
+The path type is required. Exact matches only that exact path. Prefix matches whole path segments, so slash api matches slash api slash users, but not slash api v two.
+
+16
+00:01:57,668 --> 00:02:02,974
+When several paths match, the longest one wins, no matter the order in your file.
+
+17
+00:02:03,074 --> 00:02:08,524
+A wildcard host like star dot example dot com covers exactly one level of subdomain.
+
+18
+00:02:09,874 --> 00:02:17,612
+To add HTTPS, list the host under tls and name a Secret holding the certificate and key, in the same namespace as the Ingress.
+
+19
+00:02:17,712 --> 00:02:22,698
+The controller decrypts the traffic at the edge and forwards plain HTTP to your Service.
+
+20
+00:02:22,798 --> 00:02:28,504
+cert-manager can get and renew certificates from Let's Encrypt automatically, with a single annotation.
+
+21
+00:02:28,604 --> 00:02:33,062
+If the browser shows a fake certificate, the controller couldn't use your Secret.
+
+22
+00:02:34,412 --> 00:02:43,574
+Anything beyond basic routing, like rewrites, timeouts or body size, is set with annotations that only one specific controller understands.
+
+23
+00:02:43,674 --> 00:02:49,732
+Annotations for the wrong controller are silently ignored, and moving to another controller means rewriting them.
+
+24
+00:02:49,832 --> 00:02:56,482
+Some annotations are even a security risk. Be suspicious of any answer that tells you to enable snippet annotations.
+
+25
+00:02:57,832 --> 00:03:03,042
+The Gateway API is the newer official standard, and the recommended direction for new setups.
+
+26
+00:03:03,142 --> 00:03:11,760
+It splits responsibilities. The platform team owns the Gateway, with its listeners and certificates. App teams own HTTPRoutes.
+
+27
+00:03:11,860 --> 00:03:20,334
+Features like header matching, traffic splitting for canary releases, and rewrites are part of the standard, so they work the same across implementations.
+
+28
+00:03:21,684 --> 00:03:27,278
+In the lab, you'll install a controller and route by path and host, sending the Host header with curl.
+
+29
+00:03:27,378 --> 00:03:36,460
+You'll see that prefix matching respects path segments, that an unknown host gets a four oh four from the controller, and that a missing Service gives a five oh three.
+
+30
+00:03:36,560 --> 00:03:40,938
+kubectl describe ingress shows exactly which backend is broken.
+
+31
+00:03:42,288 --> 00:03:45,594
+The HTTP status tells you where to look.
+
+32
+00:03:45,694 --> 00:03:56,696
+A four oh four from the controller means no rule matched. Five oh two means the Pod was reached but the connection failed. Five oh three means no ready endpoints. And five oh four means the app is too slow.
+
+33
+00:03:58,046 --> 00:03:59,176
+Let's recap.
+
+34
+00:03:59,276 --> 00:04:04,118
+An Ingress is only rules, and a controller must be installed to apply them.
+
+35
+00:04:04,218 --> 00:04:11,268
+Backends use the Service port, in the same namespace. Path type is required, and the longest prefix wins.
+
+36
+00:04:11,368 --> 00:04:16,146
+Use cert-manager for certificates, and prefer the Gateway API for new setups.
+
+37
+00:04:16,246 --> 00:04:19,520
+Next, you'll learn how Kubernetes handles storage.
