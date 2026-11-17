@@ -1,0 +1,211 @@
+1
+00:00:00,600 --> 00:00:04,322
+Welcome to lesson two: Linux and networking basics.
+
+2
+00:00:04,422 --> 00:00:13,152
+Containers are Linux processes, and most Kubernetes problems turn out to be networking problems. So these skills will help you in every lesson that follows.
+
+3
+00:00:14,502 --> 00:00:15,984
+Why does this matter?
+
+4
+00:00:16,084 --> 00:00:23,614
+A container is just a Linux process. When a Pod breaks, you'll open a shell inside it and debug with ordinary Linux commands.
+
+5
+00:00:23,714 --> 00:00:32,140
+And most problems you'll meet are networking problems: the wrong port, a DNS failure, or an app that isn't listening where you think it is.
+
+6
+00:00:33,490 --> 00:00:39,148
+To practice, open the Killercoda Ubuntu playground again. It's free and needs no installation.
+
+7
+00:00:39,248 --> 00:00:41,194
+Try each command as we go.
+
+8
+00:00:42,544 --> 00:00:45,402
+First, moving around files and folders.
+
+9
+00:00:45,502 --> 00:00:52,376
+pwd shows where you are. ls dash l a lists files, including hidden ones. cd changes directory.
+
+10
+00:00:52,476 --> 00:00:56,182
+cat prints a file, and less lets you scroll through a long one.
+
+11
+00:00:56,282 --> 00:01:04,980
+mkdir creates folders, cp copies, mv moves or renames, and rm removes. Be careful with rm, there's no undo.
+
+12
+00:01:06,330 --> 00:01:08,628
+Next, searching and filtering.
+
+13
+00:01:08,728 --> 00:01:15,282
+grep finds lines that contain some text. tail dash f follows a log file live, as new lines arrive.
+
+14
+00:01:15,382 --> 00:01:27,024
+The pipe symbol sends one command's output into the next command. For example, kubectl get pods, piped into grep api, shows only the API Pods. You'll use pipes all the time.
+
+15
+00:01:28,374 --> 00:01:34,608
+Every program runs as a process. ps lists them, and top shows live CPU and memory use.
+
+16
+00:01:34,708 --> 00:01:43,966
+kill sends a signal. Plain kill sends SIGTERM, which politely asks the process to stop. kill dash nine sends SIGKILL, which ends it immediately.
+
+17
+00:01:44,066 --> 00:01:56,828
+This matters in Kubernetes. When a Pod stops, Kubernetes sends SIGTERM, waits thirty seconds by default, and then sends SIGKILL. A well-written app finishes its work and exits when it receives SIGTERM.
+
+18
+00:01:58,178 --> 00:02:03,260
+Every file has an owner, a group, and permissions for read, write and execute.
+
+19
+00:02:03,360 --> 00:02:09,082
+chmod changes the permissions, chown changes the owner, and id shows which user you are.
+
+20
+00:02:09,182 --> 00:02:19,416
+In Kubernetes you can choose which user a container runs as. A permission denied error inside a Pod usually means a file belongs to root, while the app runs as a different user.
+
+21
+00:02:20,766 --> 00:02:24,584
+Environment variables are named settings that a process can read.
+
+22
+00:02:24,684 --> 00:02:28,710
+export sets one, echo prints it, and env lists them all.
+
+23
+00:02:28,810 --> 00:02:37,572
+Kubernetes uses environment variables to pass configuration into containers, from ConfigMaps and Secrets. You'll see that in lesson seven.
+
+24
+00:02:38,922 --> 00:02:47,060
+Now networking. An IP address identifies a machine, or in Kubernetes, a Pod. A port identifies one app on that machine.
+
+25
+00:02:47,160 --> 00:02:56,482
+Some ports are worth remembering. Fifty-three is DNS, eighty and four forty-three are web traffic, and sixty-four forty-three is the Kubernetes API server.
+
+26
+00:02:56,582 --> 00:03:11,328
+Two special addresses matter a lot. 127.0.0.1, also called localhost, means only this machine. 0.0.0.0, when an app listens on it, means accept connections from anywhere.
+
+27
+00:03:12,678 --> 00:03:15,200
+This leads to one of the most common bugs.
+
+28
+00:03:15,300 --> 00:03:26,686
+If an app inside a container listens on 127.0.0.1, nothing outside that container can reach it. Not even a perfectly configured Kubernetes Service.
+
+29
+00:03:26,786 --> 00:03:34,700
+The app must listen on 0.0.0.0 instead. You can check what's listening with the command ss dash t l n p.
+
+30
+00:03:34,800 --> 00:03:40,250
+AI-generated code often makes this mistake, because many frameworks default to localhost.
+
+31
+00:03:41,600 --> 00:03:46,522
+Pods and Services use private address ranges, which only work inside your network.
+
+32
+00:03:46,622 --> 00:03:56,392
+You'll often see addresses written in CIDR notation, like 10.0.0.0 slash twenty-four. The number after the slash says how many bits are fixed.
+
+33
+00:03:56,492 --> 00:04:03,558
+Slash twenty-four gives two hundred fifty-six addresses. Slash sixteen gives sixty-five thousand five hundred thirty-six.
+
+34
+00:04:04,908 --> 00:04:13,734
+DNS turns names into IP addresses. nslookup and dig let you test it, and the file resolv dot conf shows which DNS server is used.
+
+35
+00:04:13,834 --> 00:04:19,060
+Inside Kubernetes, a component called CoreDNS answers names for Services.
+
+36
+00:04:19,160 --> 00:04:30,898
+Traffic travels over TCP, which is reliable and used by web servers and databases, or over UDP, which is faster but has no delivery guarantee. DNS mostly uses UDP.
+
+37
+00:04:32,248 --> 00:04:36,178
+When you test a web app with curl, the status code tells you a lot.
+
+38
+00:04:36,278 --> 00:04:43,280
+Two hundred means OK. Four oh one and four oh three are about permissions. Four oh four means the path wasn't found.
+
+39
+00:04:43,380 --> 00:04:52,814
+In Kubernetes, five oh two often means the Ingress can't reach the Pods, five oh three means no Pods are ready, and five oh four means the app is too slow.
+
+40
+00:04:54,164 --> 00:04:56,526
+Here's your network debugging toolkit.
+
+41
+00:04:56,626 --> 00:05:02,300
+ping checks whether a host is reachable. curl dash v tests HTTP and shows every detail.
+
+42
+00:05:02,400 --> 00:05:07,946
+nc dash z v checks whether a TCP port is open, which is handy for databases.
+
+43
+00:05:08,046 --> 00:05:13,432
+And ss dash t l n p shows what's listening on this machine, and on which address.
+
+44
+00:05:14,782 --> 00:05:21,048
+Let's try it. Create a Docker network, then start an nginx container called api on that network.
+
+45
+00:05:21,148 --> 00:05:28,342
+Now run a second, temporary container on the same network, and fetch the page at http colon slash slash api.
+
+46
+00:05:28,442 --> 00:05:37,684
+It works, because Docker's built-in DNS turned the name api into an IP address. Kubernetes Services work in the same way, as you'll see in lesson six.
+
+47
+00:05:37,784 --> 00:05:40,418
+Finally, clean up the container and the network.
+
+48
+00:05:41,768 --> 00:05:43,010
+Let's recap.
+
+49
+00:05:43,110 --> 00:05:49,936
+Containers are Linux processes, so processes, signals, permissions and environment variables all apply.
+
+50
+00:05:50,036 --> 00:05:54,078
+Kubernetes stops a Pod with SIGTERM first, then SIGKILL.
+
+51
+00:05:54,178 --> 00:05:59,772
+Apps in containers must listen on 0.0.0.0, not localhost.
+
+52
+00:05:59,872 --> 00:06:07,418
+And curl, nc, ss and nslookup, plus HTTP status codes, will lead you to the broken layer.
+
+53
+00:06:07,518 --> 00:06:12,904
+Next, lesson three covers YAML, the language every Kubernetes object is written in.
