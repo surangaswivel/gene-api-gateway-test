@@ -1,0 +1,143 @@
+1
+00:00:00,600 --> 00:00:03,394
+Welcome to lesson four, the start of level one.
+
+2
+00:00:03,494 --> 00:00:10,768
+Today you'll get a working Kubernetes cluster, look at what's inside it, and learn the kubectl commands you'll use every day.
+
+3
+00:00:12,118 --> 00:00:14,224
+There are many ways to get a cluster.
+
+4
+00:00:14,324 --> 00:00:22,478
+On a laptop, kind and minikube are popular. In the cloud, there are managed services like EKS, GKE and AKS.
+
+5
+00:00:22,578 --> 00:00:30,892
+For learning, start with the free Killercoda Kubernetes playground. It gives you a real cluster with a control-plane node and a worker node, right in your browser.
+
+6
+00:00:32,242 --> 00:00:38,300
+kubectl is only a client. It sends HTTPS requests to the cluster's API server.
+
+7
+00:00:38,400 --> 00:00:48,970
+It reads its settings from a file called kubeconfig. That file lists clusters, users, and contexts. A context bundles a cluster, a user and a default namespace.
+
+8
+00:00:49,070 --> 00:00:57,864
+Always check which context you're using before running a destructive command. Many outages started with someone working on production while thinking they were on dev.
+
+9
+00:00:59,214 --> 00:01:03,848
+Let's look around. kubectl get nodes shows the machines in the cluster.
+
+10
+00:01:03,948 --> 00:01:10,422
+kubectl get pods in the kube-system namespace shows Kubernetes' own components, which also run as Pods.
+
+11
+00:01:10,522 --> 00:01:26,132
+You'll recognize etcd, the database. The API server, the front door. The scheduler, which places Pods. And the controller manager, which runs the reconciliation loops. There's also CoreDNS, kube-proxy, and a network plugin.
+
+12
+00:01:27,482 --> 00:01:32,308
+Namespaces divide a cluster into separate areas. Every cluster starts with a few.
+
+13
+00:01:32,408 --> 00:01:39,746
+default is where your objects go if you don't choose a namespace. kube-system holds Kubernetes' own components, so don't put your apps there.
+
+14
+00:01:39,846 --> 00:01:47,360
+kubectl api-resources lists every object type, with handy short names like po for pods and svc for services.
+
+15
+00:01:48,710 --> 00:01:51,024
+There are two ways to create objects.
+
+16
+00:01:51,124 --> 00:01:56,814
+Imperative commands like kubectl run are quick, which is great for experiments and exams.
+
+17
+00:01:56,914 --> 00:02:05,948
+Declarative means you write a YAML file and run kubectl apply. The file is a record you can review and keep in Git. Use this for anything real.
+
+18
+00:02:07,298 --> 00:02:13,708
+Here's a shortcut. Add dash dash dry run equals client and dash o yaml to almost any create command.
+
+19
+00:02:13,808 --> 00:02:19,562
+kubectl prints the YAML instead of creating the object. Save it to a file, edit it, and apply it.
+
+20
+00:02:20,912 --> 00:02:23,194
+Now the commands you'll use every day.
+
+21
+00:02:23,294 --> 00:02:35,016
+kubectl get lists objects. Dash A means all namespaces, dash o wide adds the IP and node, and dash l filters by label. Dash o yaml shows the full object, including its status.
+
+22
+00:02:35,116 --> 00:02:43,702
+kubectl describe shows details, and at the bottom, the Events. That's the Pod's life story, and usually where you'll find what went wrong.
+
+23
+00:02:45,052 --> 00:02:52,950
+kubectl logs shows a container's output. Dash f follows it, and dash dash previous shows the logs from before the last crash.
+
+24
+00:02:53,050 --> 00:03:00,340
+kubectl exec runs a command inside the container. The double dash separates kubectl's options from the command.
+
+25
+00:03:00,440 --> 00:03:08,098
+port-forward lets you reach a Pod from your own terminal, delete removes objects, and explain is built-in documentation for every field.
+
+26
+00:03:09,448 --> 00:03:14,226
+Here's an important lesson. Create a Pod with kubectl run, then delete it.
+
+27
+00:03:14,326 --> 00:03:21,744
+It's gone for good. Nothing recreates it, because a plain Pod has no manager. If its node dies, the Pod is lost too.
+
+28
+00:03:21,844 --> 00:03:28,862
+That's why you almost never create Pods directly. You create a Deployment, which keeps them running. That's the next lesson.
+
+29
+00:03:30,212 --> 00:03:33,086
+In the lab, you'll break things on purpose.
+
+30
+00:03:33,186 --> 00:03:41,788
+A Pod with a tag that doesn't exist shows ErrImagePull, then ImagePullBackOff. Describe shows the reason: the image wasn't found.
+
+31
+00:03:41,888 --> 00:03:50,570
+A container that exits with an error shows CrashLoopBackOff, and its restart count keeps climbing. kubectl logs with dash dash previous shows why.
+
+32
+00:03:51,920 --> 00:03:53,114
+Let's recap.
+
+33
+00:03:53,214 --> 00:04:00,136
+kubectl talks to the API server using contexts from your kubeconfig, so always check which cluster you're on.
+
+34
+00:04:00,236 --> 00:04:04,278
+Write YAML and apply it, and generate starting YAML with dry run.
+
+35
+00:04:04,378 --> 00:04:12,868
+Get, describe, logs, exec, port-forward, delete and explain are your daily tools. And describe's Events are where errors hide.
+
+36
+00:04:12,968 --> 00:04:19,714
+Finally, bare Pods aren't recreated. Next lesson, you'll use Deployments to run apps that heal themselves.

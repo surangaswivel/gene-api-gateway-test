@@ -1,0 +1,159 @@
+1
+00:00:00,600 --> 00:00:03,138
+Welcome to lesson three: YAML.
+
+2
+00:00:03,238 --> 00:00:15,680
+Every Kubernetes object is written in YAML, and so are Helm charts and CI pipelines. Most broken manifests are not Kubernetes mistakes. They're YAML mistakes. Let's make sure you can read and write it correctly.
+
+3
+00:00:17,030 --> 00:00:19,360
+YAML has only three building blocks.
+
+4
+00:00:19,460 --> 00:00:23,822
+Scalars are single values: strings, numbers, booleans and null.
+
+5
+00:00:23,922 --> 00:00:30,588
+Maps are key-value pairs, like a Map in Java or an object in JSON. A colon must be followed by a space.
+
+6
+00:00:30,688 --> 00:00:34,474
+And lists are sequences, where each item starts with a dash.
+
+7
+00:00:35,824 --> 00:00:40,858
+Kubernetes combines these all the time. The most common pattern is a list of maps.
+
+8
+00:00:40,958 --> 00:00:48,072
+Here, containers is a list. Each dash starts a new container. The lines aligned under name belong to the same container.
+
+9
+00:00:48,172 --> 00:00:54,438
+By the way, YAML is a superset of JSON, so kubectl also accepts JSON files.
+
+10
+00:00:55,788 --> 00:00:59,974
+Indentation is how YAML shows structure, so the rules are strict.
+
+11
+00:01:00,074 --> 00:01:04,084
+Use spaces only, never tabs. A tab causes an error.
+
+12
+00:01:04,184 --> 00:01:10,658
+Children are indented more than their parent, usually by two spaces, and siblings must line up exactly.
+
+13
+00:01:12,008 --> 00:01:17,554
+Here's the most dangerous kind of mistake: YAML that is valid, but means something different.
+
+14
+00:01:17,654 --> 00:01:24,784
+The resources block is one level too far to the left. It still parses, but now it belongs to the Pod spec instead of the container.
+
+15
+00:01:24,884 --> 00:01:33,934
+Depending on the tool, it's rejected or silently ignored, and your memory limit never applies. For every field, ask: which parent does this belong to?
+
+16
+00:01:35,284 --> 00:01:39,982
+Most strings don't need quotes, but some values change type unless you quote them.
+
+17
+00:01:40,082 --> 00:01:48,204
+Version one point ten becomes the number one point one. Yes and no can become booleans. A zip code with a leading zero can become an octal number.
+
+18
+00:01:48,304 --> 00:01:54,570
+And values starting with special characters, like the at sign, cause errors. When in doubt, quote it.
+
+19
+00:01:55,920 --> 00:01:59,786
+In Kubernetes, one quoting rule matters more than any other.
+
+20
+00:01:59,886 --> 00:02:04,552
+Environment variable values, labels and annotations must be strings.
+
+21
+00:02:04,652 --> 00:02:10,454
+So a port number or true must be in quotes. AI-generated manifests get this wrong very often.
+
+22
+00:02:11,804 --> 00:02:15,334
+For multi-line text, YAML has two styles.
+
+23
+00:02:15,434 --> 00:02:20,644
+The pipe keeps every newline exactly. Use it for scripts and config files.
+
+24
+00:02:20,744 --> 00:02:25,106
+The greater-than sign folds the lines into one, joined with spaces.
+
+25
+00:02:26,456 --> 00:02:28,018
+A few more features.
+
+26
+00:02:28,118 --> 00:02:32,976
+Three dashes separate several objects in one file, and a hash starts a comment.
+
+27
+00:02:33,076 --> 00:02:38,478
+Anchors and aliases let you reuse a block, though Helm templates are usually preferred.
+
+28
+00:02:38,578 --> 00:02:44,572
+Watch out for duplicate keys. Most parsers silently keep the last one, with no warning.
+
+29
+00:02:45,922 --> 00:02:47,500
+Validate in layers.
+
+30
+00:02:47,600 --> 00:02:52,538
+First check that it's valid YAML at all. Then use yamllint for style and common mistakes.
+
+31
+00:02:52,638 --> 00:03:02,296
+Finally check it against Kubernetes itself with kubectl apply dash dash dry run, and use kubectl explain to see which fields exist and where they belong.
+
+32
+00:03:03,646 --> 00:03:07,736
+In the lab, you'll create a file with three bugs and find them with yamllint.
+
+33
+00:03:07,836 --> 00:03:15,446
+RETRIES has a number where a string is needed. The VERSION item is indented by the wrong amount. And one point ten would become one point one.
+
+34
+00:03:15,546 --> 00:03:20,948
+A great trick: convert the YAML to JSON. The braces and brackets make the structure obvious.
+
+35
+00:03:22,298 --> 00:03:23,540
+Let's recap.
+
+36
+00:03:23,640 --> 00:03:29,746
+YAML is built from scalars, maps and lists, and Kubernetes mostly uses lists of maps.
+
+37
+00:03:29,846 --> 00:03:35,296
+Use spaces only, align siblings, and check which parent each field belongs to.
+
+38
+00:03:35,396 --> 00:03:39,742
+Quote environment values, labels, annotations and version numbers.
+
+39
+00:03:39,842 --> 00:03:45,804
+And remember: valid YAML isn't necessarily valid Kubernetes, so always validate.
+
+40
+00:03:45,904 --> 00:03:49,994
+In the next lesson, you'll create your first Kubernetes cluster.

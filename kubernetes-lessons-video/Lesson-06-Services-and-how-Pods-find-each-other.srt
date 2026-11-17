@@ -1,0 +1,147 @@
+1
+00:00:00,600 --> 00:00:04,626
+Welcome to lesson six: Services, and how Pods find each other.
+
+2
+00:00:04,726 --> 00:00:13,328
+You'll give your app a stable address, spread traffic across Pods, expose it inside and outside the cluster, and learn to debug connection problems.
+
+3
+00:00:14,678 --> 00:00:20,672
+Pods are temporary. Every new Pod gets a new IP address, and a rolling update replaces all of them.
+
+4
+00:00:20,772 --> 00:00:26,334
+So if your frontend called the API at a Pod IP, it would break the next time that Pod restarted.
+
+5
+00:00:26,434 --> 00:00:35,772
+A Service solves this. It gives you a stable virtual IP, a stable DNS name, and load balancing across all the ready Pods that match its selector.
+
+6
+00:00:37,122 --> 00:00:39,116
+Here's what happens inside.
+
+7
+00:00:39,216 --> 00:00:45,706
+A controller finds every ready Pod matching the Service's selector and lists their IPs in an EndpointSlice.
+
+8
+00:00:45,806 --> 00:00:53,448
+kube-proxy on every node turns that list into forwarding rules, and CoreDNS answers the Service's name with its ClusterIP.
+
+9
+00:00:53,548 --> 00:01:02,822
+The ClusterIP is virtual. It only exists as kernel rules, so ping usually fails even when the Service works. Always test with curl or wget.
+
+10
+00:01:04,172 --> 00:01:10,422
+A Service has its own port, which clients connect to, and a target port, where the app actually listens.
+
+11
+00:01:10,522 --> 00:01:18,308
+NodePort and LoadBalancer Services also open a node port, between thirty thousand and thirty-two thousand seven hundred sixty-seven.
+
+12
+00:01:18,408 --> 00:01:25,570
+A good habit is to name the container port and refer to it by name. And if a Service has several ports, each one needs a name.
+
+13
+00:01:26,920 --> 00:01:30,658
+There are several Service types, and each builds on the one before.
+
+14
+00:01:30,758 --> 00:01:41,344
+ClusterIP, the default, is reachable only inside the cluster. NodePort also opens a port on every node. LoadBalancer asks the cloud for a real load balancer with an external IP.
+
+15
+00:01:41,444 --> 00:01:47,390
+ExternalName is just a DNS alias, and a headless Service returns the Pod IPs directly.
+
+16
+00:01:47,490 --> 00:01:54,652
+On a lab cluster, a LoadBalancer stays pending forever, because there's no cloud to create one. That's expected.
+
+17
+00:01:56,002 --> 00:02:03,068
+Every Service gets a DNS name: the service name, then the namespace, then svc dot cluster dot local.
+
+18
+00:02:03,168 --> 00:02:10,122
+Short names work because each Pod has search domains configured. A bare name looks only in the Pod's own namespace.
+
+19
+00:02:10,222 --> 00:02:17,960
+So the most common bug is calling a Service by its short name from a different namespace. Add the namespace: api svc dot payments.
+
+20
+00:02:19,310 --> 00:02:23,928
+A few extras. Session affinity sends the same client to the same Pod.
+
+21
+00:02:24,028 --> 00:02:31,574
+External traffic policy Local keeps the client's real IP address, with the trade-off that only nodes running a Pod accept traffic.
+
+22
+00:02:31,674 --> 00:02:37,764
+The quickest way to create a Service is kubectl expose, which copies the selector from a Deployment.
+
+23
+00:02:39,114 --> 00:02:44,660
+In the lab, you'll use a tiny web server called whoami, which replies with its own Pod name.
+
+24
+00:02:44,760 --> 00:02:51,954
+Fetch the Service six times from a client Pod, and the hostnames rotate between the three Pods. That's load balancing.
+
+25
+00:02:52,054 --> 00:02:57,248
+DNS resolves the name, but ping fails, because the ClusterIP is virtual.
+
+26
+00:02:58,598 --> 00:03:01,136
+Then you'll break it in two classic ways.
+
+27
+00:03:01,236 --> 00:03:08,670
+Scale to zero, and the Service still exists and DNS still works, but there are no endpoints, so every request fails.
+
+28
+00:03:08,770 --> 00:03:16,748
+Then introduce a typo in the selector. The endpoints become empty, and there's no error message anywhere. It just silently stops working.
+
+29
+00:03:18,098 --> 00:03:20,780
+When a Service doesn't work, check in this order.
+
+30
+00:03:20,880 --> 00:03:26,730
+Does it exist in the right namespace? Does it have endpoints? Do the labels match? Are the Pods ready?
+
+31
+00:03:26,830 --> 00:03:36,456
+Is the app listening on the target port, on all interfaces? Does DNS resolve? Does the Pod work directly with port-forward? And is a network policy blocking it?
+
+32
+00:03:36,556 --> 00:03:41,766
+If the Pod works directly but not through the Service, the problem is the selector or the ports.
+
+33
+00:03:43,116 --> 00:03:44,198
+Let's recap.
+
+34
+00:03:44,298 --> 00:03:49,604
+A Service gives a stable IP, a DNS name, and load balancing to ready Pods.
+
+35
+00:03:49,704 --> 00:03:54,514
+Know the difference between port, target port and node port, and the Service types.
+
+36
+00:03:54,614 --> 00:04:01,632
+Use the namespace in the name when calling across namespaces, and when endpoints are empty, check the selector and readiness.
+
+37
+00:04:01,732 --> 00:04:07,662
+That completes level one. Next, lesson seven starts level two with ConfigMaps and Secrets.

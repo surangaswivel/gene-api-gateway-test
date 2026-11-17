@@ -1,0 +1,139 @@
+1
+00:00:00,600 --> 00:00:04,802
+Welcome to lesson five: Deployments, ReplicaSets and rolling updates.
+
+2
+00:00:04,902 --> 00:00:11,888
+You'll run apps that heal themselves, scale with one command, and update without downtime, with the option to roll back.
+
+3
+00:00:13,238 --> 00:00:15,488
+A Deployment works in three layers.
+
+4
+00:00:15,588 --> 00:00:19,470
+You manage the Deployment, which handles versions and rollouts.
+
+5
+00:00:19,570 --> 00:00:26,716
+The Deployment creates a ReplicaSet for each version, and the ReplicaSet keeps exactly the right number of Pods running.
+
+6
+00:00:26,816 --> 00:00:34,810
+You can see the chain in the names: the ReplicaSet name starts with the Deployment's name, and each Pod name starts with the ReplicaSet's name.
+
+7
+00:00:36,160 --> 00:00:37,994
+Here's a complete Deployment.
+
+8
+00:00:38,094 --> 00:00:45,656
+replicas says how many Pods to run. The selector says which Pods this Deployment owns, and the template is the blueprint for each Pod.
+
+9
+00:00:45,756 --> 00:00:50,582
+The template's labels must match the selector, or the API server rejects it.
+
+10
+00:00:50,682 --> 00:00:57,652
+The strategy controls how updates roll out, and the readiness probe tells Kubernetes when a new Pod is ready for traffic.
+
+11
+00:00:59,002 --> 00:01:01,236
+A few rules are worth memorizing.
+
+12
+00:01:01,336 --> 00:01:06,834
+The selector must match the template labels, and it can't be changed after the Deployment is created.
+
+13
+00:01:06,934 --> 00:01:13,952
+Only changes to the Pod template, such as a new image, trigger a rollout. Changing the replica count just scales.
+
+14
+00:01:14,052 --> 00:01:17,294
+And two Deployments must never select the same Pods.
+
+15
+00:01:18,644 --> 00:01:24,398
+The default strategy is a rolling update. New Pods are added gradually while old ones are removed.
+
+16
+00:01:24,498 --> 00:01:30,988
+maxSurge says how many extra Pods are allowed during the update. maxUnavailable says how many may be not ready.
+
+17
+00:01:31,088 --> 00:01:38,154
+Surge one, unavailable zero is the safest choice. They can't both be zero, or the rollout could never make progress.
+
+18
+00:01:39,504 --> 00:01:50,106
+The other strategy is Recreate. It stops every old Pod first, then starts the new ones. That means downtime, so use it only when two versions can't run at the same time.
+
+19
+00:01:50,206 --> 00:01:58,472
+Probes matter here. Without a readiness probe, a new Pod counts as ready the moment its container starts, even if the app needs thirty seconds to boot.
+
+20
+00:01:58,572 --> 00:02:07,110
+Kubernetes would then remove old Pods too early, and users would see errors. Zero-downtime rollouts depend on correct readiness probes.
+
+21
+00:02:08,460 --> 00:02:10,534
+Here are the rollout commands.
+
+22
+00:02:10,634 --> 00:02:15,924
+Update the image with kubectl set image, or better, edit your file and apply it.
+
+23
+00:02:16,024 --> 00:02:23,602
+rollout status waits until the update finishes. rollout history lists revisions, and rollout undo goes back to the previous one.
+
+24
+00:02:23,702 --> 00:02:33,744
+rollout restart restarts all Pods with the same spec. And to record why you changed something, use the change-cause annotation. The old dash dash record flag is deprecated.
+
+25
+00:02:35,094 --> 00:02:41,264
+Let's try it. Create a Deployment with three replicas and look at the Deployment, ReplicaSet and Pods.
+
+26
+00:02:41,364 --> 00:02:46,798
+Delete one Pod and watch: a replacement appears within seconds. That's self-healing.
+
+27
+00:02:46,898 --> 00:02:53,660
+Scale to six and back. Notice that the rollout history still shows one revision, because scaling isn't a rollout.
+
+28
+00:02:55,010 --> 00:03:03,996
+Now update the image to one point twenty-eight. You'll see two ReplicaSets: the new one with three Pods, and the old one scaled to zero, kept for rollback.
+
+29
+00:03:04,096 --> 00:03:13,082
+Then set an image tag that doesn't exist. The new Pod gets stuck in ImagePullBackOff, but the old Pods keep running. The rolling update protected you.
+
+30
+00:03:13,182 --> 00:03:17,848
+Note that Kubernetes doesn't roll back by itself. Run rollout undo to go back.
+
+31
+00:03:19,198 --> 00:03:20,392
+Let's recap.
+
+32
+00:03:20,492 --> 00:03:25,766
+A Deployment manages ReplicaSets, and ReplicaSets keep the right number of Pods.
+
+33
+00:03:25,866 --> 00:03:31,316
+The selector must match the template labels, and only template changes create a new revision.
+
+34
+00:03:31,416 --> 00:03:38,834
+Rolling updates plus readiness probes give zero downtime. And remember, rollbacks are your job: rollout undo.
+
+35
+00:03:38,934 --> 00:03:43,104
+Next, you'll learn how Services give your Pods a stable address.
